@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="tr" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönetim Paneli | Aura Roastery</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --admin-bg: #0d0f12;
+            --admin-surface: #1a1d24;
+            --admin-accent: #d4af37;
+            --admin-text: #e0e0e0;
+            --admin-text-muted: #8b92a5;
+            --admin-border: #2a2e39;
+        }
+        body {
+            background-color: var(--admin-bg);
+            color: var(--admin-text);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: var(--admin-surface);
+            border-right: 1px solid var(--admin-border);
+            position: fixed;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+        .sidebar-brand {
+            padding: 0 20px 20px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            border-bottom: 1px solid var(--admin-border);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        .sidebar-brand span { color: var(--admin-accent); }
+        .nav-link {
+            color: var(--admin-text-muted);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--admin-accent);
+            background: rgba(212, 175, 55, 0.05);
+            border-right: 3px solid var(--admin-accent);
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+        .stat-card {
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-icon {
+            width: 50px; height: 50px;
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--admin-accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .table-dark {
+            --bs-table-bg: var(--admin-surface);
+            --bs-table-border-color: var(--admin-border);
+        }
+        .badge-success { background: rgba(40, 167, 69, 0.2); color: #28a745; border: 1px solid #28a745; }
+        .badge-warning { background: rgba(255, 193, 7, 0.2); color: #ffc107; border: 1px solid #ffc107; }
+        
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1055;
+        }
+        .custom-toast {
+            background: var(--admin-surface);
+            border-left: 4px solid var(--admin-accent);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            color: white;
+            min-width: 300px;
+        }
+
+        .chart-container {
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+            border-radius: 12px;
+            padding: 20px;
+            height: 400px;
+        }
+        
+        /* Views */
+        .admin-view {
+            display: none;
+            animation: fadeIn 0.4s;
+        }
+        .admin-view.active {
+            display: block;
+        }
+        .pulse {
+            animation: pulse-red 1.5s infinite;
+            border-radius: 5px;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            AURA <span>ADMIN</span>
+        </div>
+        <nav class="nav flex-column flex-grow-1" id="sidebar-nav">
+            <a class="nav-link active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a class="nav-link" onclick="switchTab('orders', this)"><i class="fa-solid fa-cart-shopping"></i> Siparişler <span class="badge bg-danger ms-auto" id="order-badge">2</span></a>
+            <a class="nav-link" onclick="switchTab('customers', this)"><i class="fa-solid fa-users"></i> Müşteriler</a>
+            <a class="nav-link" onclick="switchTab('customer-chat', this)"><i class="fa-solid fa-comments"></i> Canlı Sipariş Destek <span class="badge bg-danger rounded-circle ms-auto d-none" id="support-unread-badge" style="width: 10px; height: 10px; padding: 0;"> </span></a>
+            <a class="nav-link" onclick="switchTab('history', this)"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Mesajlar & Arşiv</a>
+            <a class="nav-link" onclick="switchTab('settings', this)"><i class="fa-solid fa-gear"></i> Sistem Ayarları</a>
+            
+            <!-- Compact Support Notification Sidebar Card -->
+            <div class="px-3 mt-4">
+                <div class="p-3 rounded border border-secondary" style="background: rgba(255, 193, 7, 0.05); cursor: pointer;" onclick="switchTab('customer-chat', document.querySelector('[onclick*=\'customer-chat\']'))">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted fw-bold">BEKLEYEN MESAJ</small>
+                        <i class="fa-solid fa-envelope text-warning"></i>
+                    </div>
+                    <h4 class="fw-bold mb-0 text-warning" id="sidebar-waiting-count">0</h4>
+                </div>
+            </div>
+        </nav>
+        <div class="px-3 mt-auto">
+            <div class="d-flex align-items-center gap-3 p-3" style="background: rgba(0,0,0,0.3); border-radius: 10px;">
+                <div class="rounded-circle bg-secondary" style="width: 40px; height: 40px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-user-tie text-white"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold">Yönetici</h6>
+                    <small class="text-success"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Çevrimiçi</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-content">
+
+        <!-- ==============================
+             DASHBOARD VIEW
+             ============================== -->
+        <div id="view-dashboard" class="admin-view active">
+            <header class="d-flex justify-content-between align-items-center mb-5">
+                <div>
+                    <h2 class="fw-bold mb-1">Genel Bakış</h2>
+                    <p class="text-muted mb-0">Gerçek zamanlı satış grafikleri ve analizler.</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary text-white border-secondary"><i class="fa-solid fa-download me-2"></i>Rapor İndir</button>
+                </div>
+            </header>
+
+            <!-- Stats Row -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div>
+                            <p class="text-muted mb-1 small text-uppercase fw-bold">Günlük Ciro</p>
+                            <h3 class="fw-bold mb-0" id="total-revenue">24.500 ₺</h3>
+                        </div>
+                        <div class="stat-icon"><i class="fa-solid fa-wallet"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card shadow-sm border-warning" style="cursor:pointer;" onclick="switchTab('orders', document.querySelector('[onclick*=\'orders\']'))">
+                        <div>
+                            <p class="text-muted mb-1 small text-uppercase fw-bold">Aktif Siparişler</p>
+                            <h3 class="fw-bold mb-0" id="active-orders">12</h3>
+                        </div>
+                        <div class="stat-icon bg-warning text-dark pulse"><i class="fa-solid fa-box-open"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div>
+                            <p class="text-muted mb-1 small text-uppercase fw-bold">Kurye Durumu</p>
+                            <h3 class="fw-bold mb-0 text-info">Aktif</h3>
+                        </div>
+                        <div class="stat-icon" style="color: #0dcaf0; background: rgba(13, 202, 240, 0.1);"><i class="fa-solid fa-motorcycle"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div>
+                            <p class="text-muted mb-1 small text-uppercase fw-bold">Dönüşüm Oranı</p>
+                            <h3 class="fw-bold mb-0 text-success">% 4.2</h3>
+                        </div>
+                        <div class="stat-icon" style="color: #28a745; background: rgba(40, 167, 69, 0.1);"><i class="fa-solid fa-chart-line"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canlı Sipariş Panosu -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <div class="card bg-dark border-secondary shadow-lg overflow-hidden" style="border-radius: 15px; background: rgba(26, 29, 36, 0.8) !important;">
+                        <div class="card-header border-secondary bg-transparent d-flex justify-content-between align-items-center py-3">
+                            <h5 class="mb-0 fw-bold text-accent d-flex align-items-center"><i class="fa-solid fa-satellite-dish me-2 pulse"></i> CANLI SİPARİŞ TAKİP PANOSU</h5>
+                            <button class="btn btn-sm btn-outline-warning fw-bold px-4" onclick="createTestOrder()">TEST SİPARİŞİ VE ZİL KONTROLÜ</button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover mb-0 align-middle">
+                                    <thead class="bg-black text-accent small uppercase">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Zaman</th>
+                                            <th>Müşteri</th>
+                                            <th>Durum</th>
+                                            <th>Hızlı İşlem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboard-live-orders">
+                                        <!-- Real-time orders will mirror here -->
+                                        <tr class="text-muted small">
+                                            <td colspan="5" class="text-center py-5">
+                                                <i class="fa-solid fa-hourglass-start d-block mb-2 h4 opacity-50"></i>
+                                                Henüz yeni web siparişi bulunmuyor.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Row -->
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <h6 class="text-muted fw-bold mb-3">Günlük Satış Grafiği (25 Nisan 2026)</h6>
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <h6 class="text-muted fw-bold mb-3">Aylık Ciro Dağılımı (2026)</h6>
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================
+             ORDERS VIEW
+             ============================== -->
+        <div id="view-orders" class="admin-view">
+            <header class="mb-4">
+                <h2 class="fw-bold mb-1">Tüm Siparişler</h2>
+                <p class="text-muted mb-0">Platform üzerinden alınan aktif ve geçmiş siparişlerin yönetimi.</p>
+            </header>
+            
+            <div class="card bg-transparent border-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Sipariş ID</th>
+                                <th>Tarih</th>
+                                <th>Müşteri</th>
+                                <th>Tutar</th>
+                                <th>Durum</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="order-table-body">
+                            <tr>
+                                <td><span class="text-accent fw-bold">#ORD-8942</span></td>
+                                <td>21 Nisan 2026 14:30</td>
+                                <td>Müşteri İsmi</td>
+                                <td>1.250 ₺</td>
+                                <td><span class="badge badge-warning">Hazırlanıyor</span></td>
+                                <td><button class="btn btn-sm btn-outline-light" onclick="showOrderDetails('#ORD-8942', 'Müşteri İsmi', 'Aura V60 Demleme Seti (1 Adet)', '1.250 ₺', 'Hızlı gelirse sevinirim.', 'Kurye İsmi')">İncele</button></td>
+                            </tr>
+                            <tr>
+                                <td><span class="text-accent fw-bold">#ORD-8941</span></td>
+                                <td>20 Nisan 2026 11:15</td>
+                                <td>Selin Kaya</td>
+                                <td>685 ₺</td>
+                                <td><span class="badge badge-success">Kargolandı</span></td>
+                                <td><button class="btn btn-sm btn-outline-light" onclick="showOrderDetails('#ORD-8941', 'Selin Kaya', 'İmza Madlen Kutusu (1 Adet)', '685 ₺', 'Zili çalmayın lütfen.', 'Kemal Y.')">İncele</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================
+             CUSTOMERS VIEW
+             ============================== -->
+        <div id="view-customers" class="admin-view">
+            <header class="mb-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-1">Müşteriler</h2>
+                    <p class="text-muted mb-0">Aura sadakat programı ve kayıtlı kullanıcı veritabanı.</p>
+                </div>
+                <button class="btn btn-gold" style="background: var(--admin-accent); color: #000; font-weight: bold;"><i class="fa-solid fa-plus me-2"></i>Müşteri Ekle</button>
+            </header>
+            
+            <div class="card bg-transparent border-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>İsim Soyisim</th>
+                                <th>E-posta</th>
+                                <th>Toplam Harcama</th>
+                                <th>Kayıt Tarihi</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Admin</td>
+                                <td>admin@auraroastery.com</td>
+                                <td class="text-success fw-bold">14.500 ₺</td>
+                                <td>12 Oca 2026</td>
+                                <td><span class="badge bg-primary">VIP Üye</span></td>
+                            </tr>
+                            <tr>
+                                <td>Selin Kaya</td>
+                                <td>selin.kaya@gmail.com</td>
+                                <td class="text-success fw-bold">3.250 ₺</td>
+                                <td>05 Mar 2026</td>
+                                <td><span class="badge bg-secondary">Standart</span></td>
+                            </tr>
+                            <tr>
+                                <td>Murat Demir</td>
+                                <td>murat_d@outlook.com</td>
+                                <td class="text-success fw-bold">8.900 ₺</td>
+                                <td>22 Şub 2026</td>
+                                <td><span class="badge bg-primary">VIP Üye</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================
+             CANLI SİPARİŞ DESTEK (Simple & Fast)
+             ============================== -->
+        <div id="view-customer-chat" class="admin-view">
+            <header class="mb-4">
+                <h2 class="fw-bold mb-1 text-warning">Canlı Sipariş Destek</h2>
+                <p class="text-muted mb-0">Müşterilerinizle anlık konuşun. Hızlı cevap butonlarını kullanın.</p>
+            </header>
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="d-flex flex-column gap-4" id="customer-chat-requests">
+                        <!-- Real-time messages -->
+                        <div class="text-center p-5 text-muted" id="no-chat-msg">
+                            <i class="fa-solid fa-mug-hot fs-1 mb-3 d-block opacity-25"></i>
+                            Şu an bekleyen aktif bir mesaj yok.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================
+             GEÇMİŞ MESAJLAR & ARŞİV
+             ============================== -->
+        <div id="view-history" class="admin-view">
+            <header class="mb-4">
+                <h2 class="fw-bold mb-1">Geçmiş Mesajlar & Arşiv</h2>
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Sipariş No</th>
+                                <th>Müşteri</th>
+                                <th>Kurye</th>
+                                <th>Durum</th>
+                                <th>Teslimat Süresi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>24 Nisan 18:45</td>
+                                <td class="text-accent fw-bold">#ORD-8920</td>
+                                <td>Fatma G.</td>
+                                <td>Murat D.</td>
+                                <td><span class="badge bg-success">Teslim Edildi</span></td>
+                                <td>22 Dakika</td>
+                            </tr>
+                            <tr>
+                                <td>24 Nisan 14:12</td>
+                                <td class="text-accent fw-bold">#ORD-8915</td>
+                                <td>Caner S.</td>
+                                <td>Hasan B.</td>
+                                <td><span class="badge bg-success">Teslim Edildi</span></td>
+                                <td>18 Dakika</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================
+             SETTINGS VIEW
+             ============================== -->
+        <div id="view-settings" class="admin-view">
+            <header class="mb-4">
+                <h2 class="fw-bold mb-1">Sistem Ayarları</h2>
+                <p class="text-muted mb-0">Restoran operasyonel parametrelerini buradan yönetin.</p>
+            </header>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card bg-transparent border-secondary p-4">
+                        <h5 class="fw-bold mb-4 text-warning"><i class="fa-solid fa-store me-2"></i>Mağaza Durumu</h5>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" checked id="shopOpen">
+                            <label class="form-check-label" for="shopOpen">Online Sipariş Alımı (Açık/Kapalı)</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" checked id="autoCourier">
+                            <label class="form-check-label" for="autoCourier">Otomatik Kurye Ataması</label>
+                        </div>
+                        <hr class="border-secondary">
+                        <button class="btn btn-warning w-100 fw-bold" onclick="alert('Ayarlar Kaydedildi!')">GÜNCELLE</button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-transparent border-secondary p-4">
+                        <h5 class="fw-bold mb-4 text-warning"><i class="fa-solid fa-bell me-2"></i>Bildirim Ayarları</h5>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" checked id="soundAlerts">
+                            <label class="form-check-label" for="soundAlerts">Sesli Bildirimler (Zil Sesi)</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="emailAlerts">
+                            <label class="form-check-label" for="emailAlerts">E-Posta Raporları</label>
+                        </div>
+                        <hr class="border-secondary">
+                        <div class="p-3 rounded bg-dark border border-secondary">
+                            <small class="text-muted d-block mb-1">Sistem Sürümü</small>
+                            <span class="text-accent fw-bold">v2.4.0-Stable</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- End Main Content -->
+
+    <!-- Cancellation Reason Modal -->
+    <div class="modal fade" id="cancelReasonModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-dark text-white border-danger">
+                <div class="modal-header border-secondary">
+                    <h6 class="modal-title fw-bold text-danger">Sipariş İptal Nedeni</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <button class="btn btn-outline-light w-100 mb-2" onclick="confirmCancelOrder('Kurye Yok')">Kurye Yok</button>
+                    <button class="btn btn-outline-light w-100 mb-2" onclick="confirmCancelOrder('Stokta Yok')">Ürün Stokta Yok</button>
+                    <button class="btn btn-outline-light w-100 mb-2" onclick="confirmCancelOrder('Restoran Kapalı')">Restoran Kapalı</button>
+                    <button class="btn btn-outline-light w-100" onclick="confirmCancelOrder('Bölge Dışı')">Hizmet Bölgesi Dışı</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancellation Reason Modal -->
+    <div class="modal fade" id="cancelReasonModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-dark text-white border-danger shadow-lg" style="border-radius: 15px;">
+                <div class="modal-header border-secondary">
+                    <h6 class="modal-title fw-bold text-danger"><i class="fa-solid fa-ban me-2"></i>İptal Nedeni Seçin</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <button class="btn btn-outline-light w-100 mb-2 py-2" onclick="confirmCancelOrder('Kurye Yok')">Kurye Mevcut Değil</button>
+                    <button class="btn btn-outline-light w-100 mb-2 py-2" onclick="confirmCancelOrder('Stokta Yok')">Ürün Stokta Kalmadı</button>
+                    <button class="btn btn-outline-light w-100 mb-2 py-2" onclick="confirmCancelOrder('Restoran Kapalı')">Restoran Kapalı</button>
+                    <button class="btn btn-outline-light w-100 py-2" onclick="confirmCancelOrder('Bölge Dışı')">Hizmet Bölgesi Dışı</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Detail Modal -->
+    <div class="modal fade" id="historyDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-warning">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold text-warning" id="historyModalTitle">Mesaj Arşivi</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <small class="text-muted d-block mb-1">Müşteri</small>
+                        <h5 class="fw-bold" id="historyCustomer">-</h5>
+                    </div>
+                    <div class="p-3 bg-black rounded border border-secondary mb-3" style="font-size: 0.95rem; line-height: 1.5;">
+                        <span class="text-muted d-block small mb-2"><i class="fa-solid fa-clock me-1"></i> Konuşma Kaydı:</span>
+                        <div id="historyLog" class="text-white">...</div>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">Tamamlanma: <span id="historyTime">-</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background-color: var(--admin-surface); border: 1px solid var(--admin-border);">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-accent" id="modalOrderId">Sipariş #ORD-0000</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-bold d-block">Kişisel Alan</small>
+                        <span id="modalCustomerName" class="fs-5">Müşteri Adı</span>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-bold d-block">Sipariş İçeriği</small>
+                        <div class="p-3 mt-2 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                            <span id="modalOrderItems">İçerik...</span>
+                        </div>
+                    </div>
+                    <div class="mb-3 d-none" id="modalOrderNoteWrapper">
+                        <small class="text-muted text-uppercase fw-bold d-block text-warning">Sipariş Notu</small>
+                        <div class="p-2 mt-1 rounded bg-warning text-dark fw-bold small">
+                            <i class="fa-solid fa-bell me-1"></i> <span id="modalOrderNote"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-bold d-block">Atanan Kurye</small>
+                        <span id="modalCourier" class="fs-6"><i class="fa-solid fa-motorcycle text-accent me-2"></i>Bekleniyor</span>
+                    </div>
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold d-block">Toplam Tutar</small>
+                        <span id="modalOrderTotal" class="fs-4 fw-bold text-success">0 ₺</span>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Kapat</button>
+                    <button type="button" class="btn btn-warning fw-bold text-dark" data-bs-dismiss="modal">Siparişi Onayla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loud Audio Notification -->
+    <audio id="notification-sound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2855/2855-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container">
+        <div id="orderToast" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+            <div class="toast-header bg-transparent border-0 text-white pb-0 pt-3 px-3">
+                <i class="fa-solid fa-bell text-accent me-2"></i>
+                <strong class="me-auto">Yeni Sipariş!</strong>
+                <small class="text-muted">Şimdi</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body pt-2 pb-3 px-3">
+                <div class="d-flex align-items-center gap-3 mt-2">
+                    <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border: 1px solid var(--admin-border);">
+                        <i class="fa-solid fa-bag-shopping text-accent"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0" id="toast-customer">Müşteri Adı</h6>
+                        <span class="text-success fw-bold" id="toast-amount">0 ₺</span> tutarında alışveriş yaptı.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // ==========================================
+        // SPA NAVIGATION LOGIC
+        // ==========================================
+        function switchTab(tabId, el) {
+            // Remove active from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            if(el) el.classList.add('active');
+
+            // Hide all views
+            document.querySelectorAll('.admin-view').forEach(view => view.classList.remove('active'));
+            
+            // Show target view
+            const targetView = document.getElementById('view-' + tabId);
+            if(targetView) targetView.classList.add('active');
+
+            // Reset badges if opening specific tabs
+            if (tabId === 'customer-chat') {
+                document.getElementById('support-unread-badge').classList.add('d-none');
+                document.getElementById('sidebar-waiting-count').innerText = '0';
+            }
+            if (tabId === 'orders') {
+                document.getElementById('order-badge').classList.add('d-none');
+            }
+        }
+
+        // ==========================================
+        // CHART.JS INITIALIZATION
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Daily Chart
+            const ctx1 = document.getElementById('dailyChart').getContext('2d');
+            const gradient1 = ctx1.createLinearGradient(0, 0, 0, 400);
+            gradient1.addColorStop(0, 'rgba(255, 193, 7, 0.4)');
+            gradient1.addColorStop(1, 'rgba(255, 193, 7, 0)');
+
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00'],
+                    datasets: [{
+                        label: 'Satış (₺)',
+                        data: [1200, 3100, 2800, 4500, 5200, 6800, 4100],
+                        borderColor: '#ffc107',
+                        backgroundColor: gradient1,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#ffc107',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b92a5' } },
+                        x: { grid: { display: false }, ticks: { color: '#8b92a5' } }
+                    }
+                }
+            });
+
+            // Monthly Chart
+            const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Oca', 'Şub', 'Mar', 'Nis'],
+                    datasets: [{
+                        label: 'Aylık Ciro (₺)',
+                        data: [145000, 180000, 210000, 125000],
+                        backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b92a5' } },
+                        x: { grid: { display: false }, ticks: { color: '#8b92a5' } }
+                    }
+                }
+            });
+        });
+
+        // ==========================================
+        // REAL-TIME ORDERS POLLING
+        // ==========================================
+        let orderCount = 2;
+        let revenue = 142500;
+        let orderIdCounter = 8943;
+        let pendingOrdersToConfirm = 0;
+
+        function checkRealtimeOrders() {
+            let liveOrders = JSON.parse(localStorage.getItem('aura_live_orders') || '[]');
+            if (liveOrders.length > 0) {
+                // Play Soft Chime on LOOP until confirmed
+                const sound = document.getElementById('notification-sound');
+                sound.src = 'https://assets.mixkit.co/active_storage/sfx/1113/1113-preview.mp3'; 
+                sound.loop = true;
+                sound.volume = 0.8;
+                sound.play().catch(e => console.log('Audio autoplay blocked.'));
+
+                liveOrders.forEach(order => {
+                    pendingOrdersToConfirm++;
+                    const customer = order.customer;
+                    const amount = order.amount;
+                    const items = order.items;
+                    const note = order.note;
+                    const courier = order.courier;
+                    const oId = orderIdCounter++;
+
+                    // Update Stats
+                    orderCount++;
+                    revenue += amount;
+                    document.getElementById('order-badge').innerText = orderCount;
+                    document.getElementById('order-badge').classList.remove('d-none');
+                    document.getElementById('active-orders').innerText = parseInt(document.getElementById('active-orders').innerText) + 1;
+                    document.getElementById('total-revenue').innerText = revenue.toLocaleString('tr-TR') + " ₺";
+
+                    // Add to Main Orders Table
+                    const tbody = document.getElementById('order-table-body');
+                    const dashBody = document.getElementById('dashboard-live-orders');
+                    
+                    // Remove placeholder if exists
+                    if (dashBody.innerHTML.includes("siparişi bulunmuyor")) dashBody.innerHTML = "";
+
+                    const row = document.createElement('tr');
+                    row.id = `order-row-${oId}`;
+                    row.style.animation = 'fadeIn 1s';
+                    
+                    const now = new Date();
+                    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                    const dateStr = `25 Nisan ${timeStr}`;
+
+                    const rowHtml = `
+                        <td><span class="text-accent fw-bold">#ORD-${oId}</span></td>
+                        <td>${dateStr}</td>
+                        <td><span class="text-success fw-bold">${customer} <i class="fa-solid fa-globe ms-1"></i></span></td>
+                        <td>${amount} ₺</td>
+                        <td id="status-cell-${oId}"><span class="badge bg-danger text-white pulse px-3">YENİ SİPARİŞ</span></td>
+                        <td>
+                            <div class="d-flex gap-2" id="action-btns-${oId}">
+                                <button class="btn btn-sm btn-success fw-bold px-3" onclick="approveOrder(${oId})">ONAYLA</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="cancelOrderPrompt(${oId})">İPTAL</button>
+                                <button class="btn btn-sm btn-outline-light" onclick="showOrderDetails('#ORD-${oId}', '${customer}', '${items}', '${amount} ₺', '${note}', '${courier}')"><i class="fa-solid fa-eye"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    row.innerHTML = rowHtml;
+                    tbody.insertBefore(row, tbody.firstChild);
+
+                    // Add to Dashboard Mirror
+                    const dashRow = document.createElement('tr');
+                    dashRow.id = `dash-order-row-${oId}`;
+                    dashRow.innerHTML = `
+                        <td><span class="text-accent fw-bold">#ORD-${oId}</span></td>
+                        <td>${timeStr}</td>
+                        <td>${customer}</td>
+                        <td id="dash-status-cell-${oId}"><span class="badge bg-danger pulse">BEKLEMEDE</span></td>
+                        <td><button class="btn btn-xs btn-success py-0 px-2" onclick="approveOrder(${oId})">Hızlı Onay</button></td>
+                    `;
+                    dashBody.insertBefore(dashRow, dashBody.firstChild);
+
+                    // Show Toast
+                    document.getElementById('toast-customer').innerText = customer;
+                    document.getElementById('toast-amount').innerText = amount + " ₺";
+                    const toastElement = document.getElementById('orderToast');
+                    const toast = new bootstrap.Toast(toastElement);
+                    toast.show();
+                });
+                
+                localStorage.removeItem('aura_live_orders');
+            }
+        }
+
+        function createTestOrder() {
+            const testOrder = [{
+                customer: "Test Müşterisi",
+                amount: 450,
+                items: "2x Americano, 1x San Sebastian",
+                note: "Test siparişi, zil sesini kontrol edin.",
+                courier: "Murat D."
+            }];
+            localStorage.setItem('aura_live_orders', JSON.stringify(testOrder));
+            // Polling will pick it up in 2s
+        }
+
+        function approveOrder(oId) {
+            const statusCell = document.getElementById(`status-cell-${oId}`);
+            const dashStatusCell = document.getElementById(`dash-status-cell-${oId}`);
+            const actionBtns = document.getElementById(`action-btns-${oId}`);
+            
+            if(statusCell) statusCell.innerHTML = `<span class="badge bg-success">ONAYLANDI</span>`;
+            if(dashStatusCell) dashStatusCell.innerHTML = `<span class="badge bg-success">ONAYLANDI</span>`;
+            if(actionBtns) actionBtns.innerHTML = `<button class="btn btn-sm btn-outline-light" onclick="alert('Detaylar açılıyor...')">Detaylar</button>`;
+            
+            pendingOrdersToConfirm--;
+            if (pendingOrdersToConfirm <= 0) {
+                const sound = document.getElementById('notification-sound');
+                sound.pause();
+                sound.loop = false;
+                pendingOrdersToConfirm = 0;
+            }
+            
+            localStorage.setItem(`aura_order_status_#ORD-${oId}`, "Hazırlanıyor");
+        }
+
+        let currentCancelingOrderId = null;
+        function cancelOrderPrompt(oId) {
+            currentCancelingOrderId = oId;
+            const modal = new bootstrap.Modal(document.getElementById('cancelReasonModal'));
+            modal.show();
+        }
+
+        function confirmCancelOrder(reason) {
+            const oId = currentCancelingOrderId;
+            const statusCell = document.getElementById(`status-cell-${oId}`);
+            const actionBtns = document.getElementById(`action-btns-${oId}`);
+            
+            statusCell.innerHTML = `<span class="badge bg-secondary opacity-75">İPTAL: ${reason}</span>`;
+            actionBtns.innerHTML = `-`;
+            
+            pendingOrdersToConfirm--;
+            if (pendingOrdersToConfirm <= 0) {
+                const sound = document.getElementById('notification-sound');
+                sound.pause();
+                sound.loop = false;
+                pendingOrdersToConfirm = 0;
+            }
+
+            localStorage.setItem(`aura_order_status_#ORD-${oId}`, `İptal Edildi: ${reason}`);
+            bootstrap.Modal.getInstance(document.getElementById('cancelReasonModal')).hide();
+        }
+
+        // Poll every 2 seconds for Web Orders
+        setInterval(checkRealtimeOrders, 2000);
+
+        // ==========================================
+        // REAL-TIME SUPPORT REQUESTS
+        // ==========================================
+        function checkRealtimeSupport() {
+            let supportMsgs = JSON.parse(localStorage.getItem('aura_support_msgs') || '[]');
+            if (supportMsgs.length > 0) {
+                console.log("New support messages found:", supportMsgs);
+                
+                // Play Loud Sound
+                const sound = document.getElementById('notification-sound');
+                sound.src = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'; // Professional bell
+                sound.volume = 1.0;
+                sound.play().catch(e => console.log('Audio autoplay blocked.'));
+
+                // Show Unread Badge if not on customer-chat tab
+                if (!document.getElementById('view-customer-chat').classList.contains('active')) {
+                    document.getElementById('support-unread-badge').classList.remove('d-none');
+                }
+
+                // Increment Sidebar Waiting Count
+                const sidebarCountEl = document.getElementById('sidebar-waiting-count');
+                let currentWaiting = parseInt(sidebarCountEl.innerText) || 0;
+                sidebarCountEl.innerText = currentWaiting + supportMsgs.length;
+
+                const chatContainer = document.getElementById('customer-chat-requests');
+                const noChatMsg = document.getElementById('no-chat-msg');
+                if (noChatMsg) noChatMsg.remove();
+                
+                supportMsgs.forEach(msg => {
+                    const text = msg.text;
+                    const time = msg.time;
+                    const reqId = Math.floor(Math.random() * 900) + 100;
+                    
+                    const el = document.createElement('div');
+                    el.className = 'p-4 rounded mt-3 shadow-lg';
+                    el.style = 'background: #1e222a; border: 1px solid var(--admin-accent); animation: fadeIn 0.5s;';
+                    
+                    el.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold d-flex align-items-center text-accent"><i class="fa-solid fa-comment-dots me-2"></i> Canlı Destek Talebi</h5>
+                            <span class="badge bg-dark text-accent border border-secondary fw-bold px-3 py-2">${time}</span>
+                        </div>
+                        <div class="p-4 mb-4 rounded bg-dark border-start border-accent border-4" style="color: #fff; font-size: 1.1rem; line-height: 1.6;">
+                            "${text}"
+                        </div>
+                        
+                        <div class="row g-2 mb-4">
+                            <div class="col-md-3"><button class="btn btn-sm btn-outline-light w-100 py-2" onclick="useCannedResponse(${reqId}, 'Merhaba! Siparişiniz şu an hazırlanıyor.')">🥘 Hazırlanıyor</button></div>
+                            <div class="col-md-3"><button class="btn btn-sm btn-outline-light w-100 py-2" onclick="useCannedResponse(${reqId}, 'Kuryemiz yola çıktı, afiyet olsun!')">🛵 Yola Çıktı</button></div>
+                            <div class="col-md-3"><button class="btn btn-sm btn-outline-light w-100 py-2" onclick="useCannedResponse(${reqId}, 'Gecikme için özür dileriz, 5 dk içinde kapınızdayız.')">⏳ 5 Dakika</button></div>
+                            <div class="col-md-3"><button class="btn btn-sm btn-outline-light w-100 py-2" onclick="useCannedResponse(${reqId}, 'Anlaşıldı, notunuz kuryemize iletildi.')">✅ Tamamdır</button></div>
+                        </div>
+
+                        <div class="input-group">
+                            <input type="text" id="reply-input-${reqId}" class="form-control bg-dark border-secondary text-white" placeholder="Müşteriye cevap yazın...">
+                            <button class="btn btn-warning fw-bold px-4" onclick="sendAdminReply(${reqId})"><i class="fa-solid fa-paper-plane me-2"></i> GÖNDER</button>
+                        </div>
+                    `;
+                    chatContainer.insertBefore(el, chatContainer.firstChild);
+                });
+                
+                // Clear the messages so they don't trigger again
+                localStorage.removeItem('aura_support_msgs');
+            }
+        }
+
+        function sendAdminReply(reqId) {
+            const input = document.getElementById(`reply-input-${reqId}`);
+            const text = input.value.trim();
+            if (!text) return;
+
+            let adminReplies = JSON.parse(localStorage.getItem('aura_admin_replies') || '[]');
+            adminReplies.push({ text: text, time: new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'}) });
+            localStorage.setItem('aura_admin_replies', JSON.stringify(adminReplies));
+
+            input.value = '';
+            alert('Mesajınız müşteriye iletildi!');
+        }
+
+        function useCannedResponse(reqId, text) {
+            const input = document.getElementById(`reply-input-${reqId}`);
+            input.value = text;
+            sendAdminReply(reqId);
+
+            // Update Global Order Status for Tracking
+            let status = "Mutfakta Hazırlanıyor";
+            if (text.includes("hazırlanıyor")) status = "Hazırlanıyor";
+            if (text.includes("yola çıktı")) status = "Yola Çıktı";
+            if (text.includes("kapınızdayız")) status = "Kurye Yaklaştı";
+            if (text.includes("notunuz kuryemize iletildi")) status = "Not Alındı";
+            
+            localStorage.setItem(`aura_order_status_#ORD-${reqId}`, status);
+        }
+
+        setInterval(checkRealtimeSupport, 2000);
+
+        // ==========================================
+        // MODAL HANDLER
+        // ==========================================
+        function showOrderDetails(orderId, customer, items, total, note = '', courier = 'Henüz Atanmadı') {
+            document.getElementById('modalOrderId').innerText = 'Sipariş ' + orderId;
+            document.getElementById('modalCustomerName').innerText = customer;
+            document.getElementById('modalOrderItems').innerText = items;
+            document.getElementById('modalOrderTotal').innerText = total;
+            document.getElementById('modalCourier').innerHTML = `<i class="fa-solid fa-motorcycle text-accent me-2"></i> Kurye: ${courier}`;
+            
+            const noteWrapper = document.getElementById('modalOrderNoteWrapper');
+            if(note) {
+                document.getElementById('modalOrderNote').innerText = note;
+                noteWrapper.classList.remove('d-none');
+            } else {
+                noteWrapper.classList.add('d-none');
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+            modal.show();
+        }
+
+        function showHistoryDetail(orderId, customer, log, time) {
+            document.getElementById('historyModalTitle').innerText = 'Mesaj Arşivi: ' + orderId;
+            document.getElementById('historyCustomer').innerText = customer;
+            document.getElementById('historyLog').innerText = log;
+            document.getElementById('historyTime').innerText = time;
+            
+            const modal = new bootstrap.Modal(document.getElementById('historyDetailModal'));
+            modal.show();
+        }
+    </script>
+</body>
+</html>

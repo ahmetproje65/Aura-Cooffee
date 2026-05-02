@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dükkana Giriş | Aura Roastery</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body, html { 
+            height: 100%; 
+            overflow: hidden; 
+            /* Coffee cup emoji cursor for the entire page */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" style="font-size: 24px;"><text y="24">☕</text></svg>') 16 16, auto;
+        }
+        
+        /* Interactive sparkles for buttons and links */
+        button, a, input {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" style="font-size: 24px;"><text y="24">✨</text></svg>') 16 16, pointer !important;
+        }
+
+        .login-container {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
+        }
+        
+        .login-video {
+            position: absolute;
+            top: 50%; left: 50%;
+            min-width: 100%; min-height: 100%;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            z-index: 0;
+            filter: brightness(0.2) sepia(0.5) hue-rotate(-30deg) blur(2px);
+        }
+
+        /* Floating Coffee Beans / Particles */
+        .particle {
+            position: absolute;
+            font-size: 2.5rem;
+            z-index: 1;
+            pointer-events: none;
+            animation: float 15s linear infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(110vh) rotate(0deg) scale(0.8); opacity: 0; }
+            10% { opacity: 0.9; }
+            90% { opacity: 0.9; }
+            100% { transform: translateY(-20vh) rotate(360deg) scale(1.5); opacity: 0; }
+        }
+
+        /* Animated Tags for that "Crowded / Fun" feeling */
+        .floating-badge {
+            position: absolute;
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            z-index: 2;
+            backdrop-filter: blur(5px);
+            animation: pulse-float 4s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse-float {
+            0% { transform: translateY(0px) scale(1); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
+            100% { transform: translateY(-20px) scale(1.05); box-shadow: 0 0 25px rgba(255, 215, 0, 0.6); }
+        }
+
+        /* Form Card */
+        .login-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 20px;
+            padding: 50px;
+            width: 100%;
+            max-width: 450px;
+            z-index: 5;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255, 215, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        
+        .login-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 215, 0, 0.6);
+        }
+
+        /* Shine effect */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+            transform: skewX(-20deg);
+            animation: shine 6s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        .form-control {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+        }
+        .form-control:focus {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+        }
+        
+        .btn-gold {
+            padding: 15px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-google {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+            border: none;
+        }
+        .btn-google:hover {
+            background: white;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(255,255,255,0.2);
+        }
+        
+        .animated-icon {
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Background Video -->
+        <video autoplay muted loop playsinline class="login-video">
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-coffee-maker-preparing-coffee-4175-large.mp4" type="video/mp4">
+        </video>
+        
+        <!-- Floating Badges for a Crowded/Fun aesthetic -->
+        <div class="floating-badge" style="top: 15%; left: 10%; animation-delay: 0s;">🔥 %100 Arabica Çekirdekler</div>
+        <div class="floating-badge" style="bottom: 20%; left: 15%; animation-delay: 1s;">✨ Ücretsiz Kargo</div>
+        <div class="floating-badge" style="top: 25%; right: 10%; animation-delay: 0.5s;">🍫 Premium Çikolatalar</div>
+        <div class="floating-badge" style="bottom: 25%; right: 15%; animation-delay: 1.5s;">🎁 Sürpriz Hediyeler</div>
+
+        <!-- Coffee Beans Particles (Generated by JS) -->
+        <div id="particles-container"></div>
+
+        <div class="login-card reveal active">
+            <div class="text-center mb-5">
+                <i class="fa-solid fa-mug-hot text-accent fa-3x mb-3 animated-icon"></i>
+                <h2 class="font-heading text-white fw-bold letter-spacing">AURA <span class="text-accent">ONLINE</span></h2>
+                <p class="text-secondary mt-2">Büyülü Kahve Dünyasına Giriş Yap</p>
+            </div>
+            
+            <form id="loginForm">
+                <!-- Error Message -->
+                <div id="error-msg" class="alert alert-danger d-none text-center small py-2 fw-bold" role="alert">
+                    Hatalı! Şifre veya Kullanıcı Adı yanlış.
+                </div>
+                
+                <div class="mb-3 position-relative">
+                    <i class="fa-solid fa-user position-absolute text-secondary" style="top: 18px; left: 15px;"></i>
+                    <input type="text" class="form-control" id="username" placeholder="Kullanıcı Adı" style="padding-left: 45px;" required>
+                </div>
+                <div class="mb-4 position-relative">
+                    <i class="fa-solid fa-lock position-absolute text-secondary" style="top: 18px; left: 15px;"></i>
+                    <input type="password" class="form-control" id="password" placeholder="Şifre" style="padding-left: 45px;" required>
+                </div>
+                
+                <button type="submit" class="btn btn-gold w-100 mb-4 fw-bold"><i class="fa-solid fa-door-open me-2"></i>DÜKKANA GİR</button>
+                
+                <div class="position-relative text-center text-secondary mb-4">
+                    <span style="background: #111; padding: 0 15px; position: relative; z-index: 2; border-radius: 20px;">veya hızlı giriş</span>
+                    <div style="position: absolute; top: 50%; left: 0; right: 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1;"></div>
+                </div>
+                
+                <button type="button" class="btn btn-google w-100" onclick="googleLogin()">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="22" alt="Google">
+                    Google ile Hızlı Giriş
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Generate floating coffee beans / fun emojis
+        const particlesContainer = document.getElementById('particles-container');
+        const emojis = ['☕', '✨', '🤎', '🍂', '🍫', '🌟', '☕'];
+        for(let i=0; i<20; i++) {
+            let el = document.createElement('div');
+            el.className = 'particle';
+            el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (Math.random() * 8 + 8) + 's';
+            el.style.animationDelay = (Math.random() * 10) + 's';
+            particlesContainer.appendChild(el);
+        }
+
+        // Exact Credentials Login Logic
+        function handleLogin() {
+            const usernameInput = document.getElementById('username').value.trim();
+            const passwordInput = document.getElementById('password').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+
+            // Hardcoded Credentials
+            if (usernameInput === 'Admin' && passwordInput === '123456') {
+                localStorage.setItem('aura_auth', 'true');
+                localStorage.setItem('aura_user', usernameInput);
+                window.location.href = 'shop.html';
+            } else {
+                errorMsg.classList.remove('d-none');
+                
+                // Shake Animation
+                const card = document.querySelector('.login-card');
+                card.style.transform = 'translateX(-10px)';
+                setTimeout(() => card.style.transform = 'translateX(10px)', 100);
+                setTimeout(() => card.style.transform = 'translateX(-10px)', 200);
+                setTimeout(() => card.style.transform = 'translateX(0)', 300);
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleLogin();
+        });
+
+        function googleLogin() {
+            localStorage.setItem('aura_auth', 'true');
+            localStorage.setItem('aura_user', 'Admin (Google)');
+            window.location.href = 'shop.html';
+        }
+    </script>
+</body>
+</html>
